@@ -1,0 +1,90 @@
+import gmpy2
+from cryptography.hazmat.primitives.asymmetric import ec
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.backends import default_backend
+
+
+def ECPointGen(x, y):
+    curve = ec.SECP256K1()
+    x_int = gmpy2.mpz(x)
+    y_int = gmpy2.mpz(y)
+    public_numbers = ec.EllipticCurvePublicNumbers(x_int, y_int, curve)
+    return public_numbers.public_key(default_backend())
+
+def IsOnCurveCheck(point):
+    curve = ec.SECP256K1()
+    try:
+        point.public_numbers().encode_point(curve)
+        return True
+    except ValueError:
+        return False
+
+# Додавання точок
+def AddECPoints(a, b):
+    curve = ec.SECP256K1()
+    return a + b
+
+# Подвоєння точок
+def DoubleECPoints(a):
+    curve = ec.SECP256K1()
+    return a + a
+
+# Скалярне множення точок
+def ScalarMult(k, a):
+    curve = ec.SECP256K1()
+    return k * a
+
+# Серіалізація точки
+def ECPointToString(point):
+    return point.public_bytes(
+        encoding=serialization.Encoding.X962,
+        format=serialization.PublicFormat.UncompressedPoint
+    )
+
+# Десеріалізація точки
+def StringToECPoint(s):
+    curve = ec.SECP256K1()
+    return ec.EllipticCurvePublicKey.from_encoded_point(curve, s)
+
+# Друкування точки
+def PrintECPoint(point):
+    print(point.public_numbers().encode_point())
+
+x1 = '123456789'
+y1 = '987654321'
+point1 = ECPointGen(x1, y1)
+print("Point 1:")
+PrintECPoint(point1)
+
+x2 = '987654321'
+y2 = '123456789'
+point2 = ECPointGen(x2, y2)
+print("Point 2:")
+PrintECPoint(point2)
+
+is_on_curve1 = IsOnCurveCheck(point1)
+print("Is point 1 on curve?", is_on_curve1)
+
+is_on_curve2 = IsOnCurveCheck(point2)
+print("Is point 2 on curve?", is_on_curve2)
+
+add_result = AddECPoints(point1, point2)
+print("Addition Result:")
+PrintECPoint(add_result)
+
+double_result = DoubleECPoints(point1)
+print("Doubling Result:")
+PrintECPoint(double_result)
+
+scalar = 42
+mult_result = ScalarMult(scalar, point1)
+print("Scalar Multiplication Result:")
+PrintECPoint(mult_result)
+
+serialized = ECPointToString(point1)
+print("Serialized Point 1:")
+print(serialized)
+
+deserialized = StringToECPoint(serialized)
+print("Deserialized Point 1:")
+PrintECPoint(deserialized)
