@@ -1,90 +1,55 @@
-import gmpy2
-from cryptography.hazmat.primitives.asymmetric import ec
-from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.backends import default_backend
+from Crypto.Util.number import getRandomInteger
+from Crypto.PublicKey import ECC
 
 
-def ECPointGen(x, y):
-    curve = ec.SECP256K1()
-    x_int = gmpy2.mpz(x)
-    y_int = gmpy2.mpz(y)
-    public_numbers = ec.EllipticCurvePublicNumbers(x_int, y_int, curve)
-    return public_numbers.public_key(default_backend())
+def base_point_get():
+    # Отримати базову точку G
+    curve = ECC.generate(curve='P-256')
+    return curve.pointQ
 
-def IsOnCurveCheck(point):
-    curve = ec.SECP256K1()
-    try:
-        point.public_numbers().encode_point(curve)
-        return True
-    except ValueError:
-        return False
+def ec_point_gen(x, y):
+    # Створити точку ЕК з координатами (x, y)
+    curve = ECC.generate(curve='P-256')
+    return curve.point(x, y)
 
-# Додавання точок
-def AddECPoints(a, b):
-    curve = ec.SECP256K1()
+def is_on_curve_check(point):
+    # Перевірити, чи належить точка point до кривої
+    curve = ECC.generate(curve='P-256')
+    return curve.contains(point)
+
+def add_ec_points(a, b):
+    # Додати точки a і b на ЕК
+    curve = ECC.generate(curve='P-256')
     return a + b
 
-# Подвоєння точок
-def DoubleECPoints(a):
-    curve = ec.SECP256K1()
-    return a + a
+def double_ec_point(a):
+    # Подвоїти точку a на ЕК
+    curve = ECC.generate(curve='P-256')
+    return 2 * a
 
-# Скалярне множення точок
-def ScalarMult(k, a):
-    curve = ec.SECP256K1()
+def scalar_mult(k, a):
+    # Помножити точку a на скаляр k
+    curve = ECC.generate(curve='P-256')
     return k * a
 
-# Серіалізація точки
-def ECPointToString(point):
-    return point.public_bytes(
-        encoding=serialization.Encoding.X962,
-        format=serialization.PublicFormat.UncompressedPoint
-    )
+def ec_point_to_string(point):
+    # Перетворити точку в рядок
+    return f"{point.x},{point.y}"
 
-# Десеріалізація точки
-def StringToECPoint(s):
-    curve = ec.SECP256K1()
-    return ec.EllipticCurvePublicKey.from_encoded_point(curve, s)
+def string_to_ec_point(s):
+    # Перетворити рядок в точку
+    x, y = map(int, s.split(","))
+    curve = ECC.generate(curve='P-256')
+    return curve.point(x, y)
 
-# Друкування точки
-def PrintECPoint(point):
-    print(point.public_numbers().encode_point())
+def print_ec_point(point):
+    # Вивести координати точки на ЕК
+    print(f"({point.x}, {point.y})")
 
-x1 = '123456789'
-y1 = '987654321'
-point1 = ECPointGen(x1, y1)
-print("Point 1:")
-PrintECPoint(point1)
 
-x2 = '987654321'
-y2 = '123456789'
-point2 = ECPointGen(x2, y2)
-print("Point 2:")
-PrintECPoint(point2)
+G = base_point_get()
+k = getRandomInteger(256)
+d = getRandomInteger(256)
 
-is_on_curve1 = IsOnCurveCheck(point1)
-print("Is point 1 on curve?", is_on_curve1)
-
-is_on_curve2 = IsOnCurveCheck(point2)
-print("Is point 2 on curve?", is_on_curve2)
-
-add_result = AddECPoints(point1, point2)
-print("Addition Result:")
-PrintECPoint(add_result)
-
-double_result = DoubleECPoints(point1)
-print("Doubling Result:")
-PrintECPoint(double_result)
-
-scalar = 42
-mult_result = ScalarMult(scalar, point1)
-print("Scalar Multiplication Result:")
-PrintECPoint(mult_result)
-
-serialized = ECPointToString(point1)
-print("Serialized Point 1:")
-print(serialized)
-
-deserialized = StringToECPoint(serialized)
-print("Deserialized Point 1:")
-PrintECPoint(deserialized)
+H1 = scalar_mult(d, G)
+H2 = scalar_mult(k, H1)
